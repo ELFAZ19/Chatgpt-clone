@@ -9,9 +9,39 @@ import { errorHandler } from "./src/middleware/error.handler.js";
 
 import mainRouter from "./src/api/main.routes.js";
 
+const defaultOrigins = [
+  "https://chatgpt-clone-1-wfx8.onrender.com",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+
+function normalizeOrigin(origin) {
+  return origin?.replace(/\/$/, "") ?? "";
+}
+
+const allowedOrigins = (
+  process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",")
+    : defaultOrigins
+)
+  .map((origin) => normalizeOrigin(origin.trim()))
+  .filter(Boolean);
+
+const allowedOriginSet = new Set(allowedOrigins);
+
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOriginSet.has(normalizeOrigin(origin))) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+  }),
+);
 app.use(express.json());
 
 app.use("/api", mainRouter);
